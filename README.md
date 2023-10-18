@@ -102,4 +102,4 @@ BertSum은 BERT 위에 inter-sentence Transformer 2-layers 를 얹은 구조를 
     python main.py -task test -test_from 1209_1236/model_step_7000.pt -visible_gpus 0
     ```
 
-    결과는 `ext/data/results/` 폴더에 `result_1209_1236_step_7000.candidate`  및 `submission_날짜_시간.csv` 형태로 저장됩니다.
+    결과는 `ext/data/results/` 폴더에 `result_1209_1236_step_7000.candidate`  및 `submission_날짜_시간.csv` 형태로 저장됩니다."# kobertsum" 
