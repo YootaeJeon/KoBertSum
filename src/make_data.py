@@ -131,7 +131,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-task", default=None, type=str, choices=['df', 'train_bert', 'test_bert'])
     parser.add_argument("-target_summary_sent", default='ext', type=str)
-    parser.add_argument("-n_cpus", default='2', type=str)
+    parser.add_argument("-n_cpus", default='4', type=str)
 
     args = parser.parse_args()
     PROBLEM = 'ext'
@@ -215,7 +215,7 @@ if __name__ == '__main__':
             else:
                 os.mkdir(bert_data_dir)
             
-            os.system(f"python preprocess.py"
+            os.system(f"python3 preprocess.py"
                 + f" -mode format_to_bert -dataset {data_type}"
                 + f" -raw_path {json_data_dir}"
                 + f" -save_path {bert_data_dir}"
@@ -249,7 +249,7 @@ if __name__ == '__main__':
         else:
             os.mkdir(bert_data_dir)
         
-        os.system(f"python preprocess.py"
+        os.system(f"python3 preprocess.py"
             + f" -mode format_to_bert -dataset test"
             + f" -raw_path {json_data_dir}"
             + f" -save_path {bert_data_dir}"
