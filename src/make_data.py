@@ -12,18 +12,6 @@ import argparse
 import pickle
 import string
 
-PROBLEM = 'ext'
-
-## 사용할 path 정의
-# PROJECT_DIR = '/home/uoneway/Project/PreSumm_ko'
-PROJECT_DIR = '/data/aip/logs/t3qai/000820703792611374/kobertsum'
-
-DATA_DIR = f'{PROJECT_DIR}/{PROBLEM}/data'
-RAW_DATA_DIR = DATA_DIR + '/raw'
-JSON_DATA_DIR = DATA_DIR + '/json_data'
-BERT_DATA_DIR = DATA_DIR + '/bert_data' 
-LOG_DIR = f'{PROJECT_DIR}/{PROBLEM}/logs'
-LOG_PREPO_FILE = LOG_DIR + '/preprocessing.log' 
 
 
 def number_split(sentence):
@@ -146,6 +134,17 @@ if __name__ == '__main__':
     parser.add_argument("-n_cpus", default='2', type=str)
 
     args = parser.parse_args()
+    PROBLEM = 'ext'
+
+    ## 사용할 path 정의
+    PROJECT_DIR = '/data/aip/logs/t3qai/000820703792611374/kobertsum'
+    
+    DATA_DIR = f'{PROJECT_DIR}/{PROBLEM}/data'
+    RAW_DATA_DIR = DATA_DIR + '/raw'
+    JSON_DATA_DIR = DATA_DIR + '/json_data'
+    BERT_DATA_DIR = DATA_DIR + '/bert_data' 
+    LOG_DIR = f'{PROJECT_DIR}/{PROBLEM}/logs'
+    LOG_PREPO_FILE = LOG_DIR + '/preprocessing.log' 
 
     # python make_data.py -make df
     # Convert raw data to df
