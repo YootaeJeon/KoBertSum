@@ -6,25 +6,21 @@ import re
 import sys
 import os
 
-PROBLEM = 'ext'
-
-## 사용할 path 정의
-# PROJECT_DIR = '/home/uoneway/Project/PreSumm_ko'
-PROJECT_DIR = '..'
-print(PROJECT_DIR)
-
-DATA_DIR = f'{PROJECT_DIR}/{PROBLEM}/data'
-RAW_DATA_DIR = DATA_DIR + '/raw'
-JSON_DATA_DIR = DATA_DIR + '/json_data'
-BERT_DATA_DIR = DATA_DIR + '/bert_data' 
-LOG_DIR = f'{PROJECT_DIR}/{PROBLEM}/logs'
-LOG_PREPO_FILE = LOG_DIR + '/preprocessing.log' 
-
-MODEL_DIR = f'{PROJECT_DIR}/{PROBLEM}/models' 
-RESULT_DIR = f'{PROJECT_DIR}/{PROBLEM}/results' 
-
 # python make_submission.py result_1209_1236_step_7000.candidate
 if __name__ == '__main__':
+    PROBLEM = 'ext'
+    PROJECT_DIR = '/data/aip/logs/t3qai/000820703792611374/kobertsum'
+    print(PROJECT_DIR)
+    
+    DATA_DIR = f'{PROJECT_DIR}/{PROBLEM}/data'
+    RAW_DATA_DIR = DATA_DIR + '/raw'
+    JSON_DATA_DIR = DATA_DIR + '/json_data'
+    BERT_DATA_DIR = DATA_DIR + '/bert_data' 
+    LOG_DIR = f'{PROJECT_DIR}/{PROBLEM}/logs'
+    LOG_PREPO_FILE = LOG_DIR + '/preprocessing.log' 
+    
+    MODEL_DIR = f'{PROJECT_DIR}/{PROBLEM}/models' 
+    RESULT_DIR = f'{PROJECT_DIR}/{PROBLEM}/results'
     # test set
     with open(RAW_DATA_DIR + '/extractive_test_v2.jsonl', 'r') as json_file:
         json_list = list(json_file)
