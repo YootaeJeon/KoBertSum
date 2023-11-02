@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from transformers import BertModel, BertConfig
 from torch.nn.init import xavier_uniform_
-
+from transformers import AutoModel
 from models.decoder import TransformerDecoder
 from models.encoder import Classifier, ExtTransformerEncoder
 from models.optimizers import Optimizer
@@ -133,21 +133,37 @@ class Bert(nn.Module):
                 top_vec, _ = self.model(x, token_type_ids=segs, attention_mask=mask)
         return top_vec
 
+class BigBird(nn.Module):
+    def __init__(self, large, temp_dir, finetune=False):
+        super(BigBird, self).__init__()
+        self.model = AutoModel.from_pretrained("monologg/kobigbird-bert-base", cache_dir=temp_dir)
+        self.finetune = finetune
 
+    def forward(self, x, mask):
+        if self.finetune:
+            top_vec = self.model(x, attention_mask=mask)[0]
+        else:
+            self.eval()
+            with torch.no_grad():
+                top_vec = self.model(x, attention_mask=mask)[0]
+        return top_vec 
+
+
+# ExtSummarizer class에 args.encoder bigbird 추가
 class ExtSummarizer(nn.Module):
     def __init__(self, args, device, checkpoint):
         super(ExtSummarizer, self).__init__()
         self.args = args
         self.device = device
-        self.bert = Bert(args.large, args.temp_dir, args.finetune_bert)
-
-        self.ext_layer = ExtTransformerEncoder(self.bert.model.config.hidden_size, args.ext_ff_size, args.ext_heads,
+        
+        if (args.encoder == 'bert'):
+            self.bert = Bert(args.large, args.temp_dir, args.finetune_bert)
+            self.ext_layer = ExtTransformerEncoder(self.bert.model.config.hidden_size, args.ext_ff_size, args.ext_heads,
                                                args.ext_dropout, args.ext_layers)
-        if (args.encoder == 'baseline'):
-            bert_config = BertConfig(self.bert.model.config.vocab_size, hidden_size=args.ext_hidden_size,
-                                     num_hidden_layers=args.ext_layers, num_attention_heads=args.ext_heads, intermediate_size=args.ext_ff_size)
-            self.bert.model = BertModel(bert_config)
-            self.ext_layer = Classifier(self.bert.model.config.hidden_size)
+        elif (args.encoder == 'bigbird'):
+            self.bigbird = BigBird(args.large, args.temp_dir, args.finetune_bert)
+            self.ext_layer = ExtTransformerEncoder(self.bigbird.model.config.hidden_size, args.ext_ff_size, args.ext_heads,
+                                            args.ext_dropout, args.ext_layers)
 
         if(args.max_pos>512):
             my_pos_embeddings = nn.Embedding(args.max_pos, self.bert.model.config.hidden_size)
@@ -169,8 +185,11 @@ class ExtSummarizer(nn.Module):
 
         self.to(device)
 
+
+		# encoder 에 따라 top_vec 을 구하는 모델을 바꿔줘야 함. bert 는 segs 필요.
     def forward(self, src, segs, clss, mask_src, mask_cls):
-        top_vec = self.bert(src, segs, mask_src)
+        #top_vec = self.bert(src, segs, mask_src)
+        top_vec = self.bigbird(src, mask=mask_src)
         sents_vec = top_vec[torch.arange(top_vec.size(0)).unsqueeze(1), clss]
         sents_vec = sents_vec * mask_cls[:, :, None].float()
         sent_scores = self.ext_layer(sents_vec, mask_cls).squeeze(-1)
