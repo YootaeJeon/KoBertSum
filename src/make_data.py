@@ -1,7 +1,7 @@
 import os
 import sys
 import re
-#import MeCab
+from konlpy.tag import Mecab
 from bs4 import BeautifulSoup
 import kss
 import json
@@ -10,12 +10,13 @@ import pandas as pd
 from tqdm import tqdm
 import argparse
 import pickle
+import string
 
 PROBLEM = 'ext'
 
 ## 사용할 path 정의
 # PROJECT_DIR = '/home/uoneway/Project/PreSumm_ko'
-PROJECT_DIR = '..'
+PROJECT_DIR = '/data/aip/logs/t3qai/000820703792611374/kobertsum'
 
 DATA_DIR = f'{PROJECT_DIR}/{PROBLEM}/data'
 RAW_DATA_DIR = DATA_DIR + '/raw'
@@ -24,32 +25,6 @@ BERT_DATA_DIR = DATA_DIR + '/bert_data'
 LOG_DIR = f'{PROJECT_DIR}/{PROBLEM}/logs'
 LOG_PREPO_FILE = LOG_DIR + '/preprocessing.log' 
 
-
-# special_symbols_in_dict = ['!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-']
-# unused_tags = ['SF', 'SE', 'SSO', 'SSC', 'SC', 'SY']
-# def korean_tokenizer(text, unused_tags=None, print_tag=False): 
-#     # assert if use_tags is None or unuse_tags is None
-    
-#     tokenizer = MeCab.Tagger("-d /usr/local/lib/mecab/dic/mecab-ko-dic")
-#     parsed = tokenizer.parse(text)
-#     word_tag = [w for w in parsed.split("\n")]
-#     result = []
-    
-#     if unused_tags:
-#         for word_ in word_tag[:-2]:
-#             word = word_.split("\t")
-#             tag = word[1].split(",")[0]
-#             if tag not in unused_tags:
-#                 if print_tag:
-#                     result.append((word[0], tag))
-#                 else:
-#                     result.append(word[0]) 
-#     else:
-#         for word_ in word_tag[:-2]:
-#             word = word_.split("\t")
-#             result.append(word[0]) 
-
-#     return result
 
 def number_split(sentence):
     # 1. 공백 이후 숫자로 시작하는 경우만(문자+숫자+문자, 문자+숫자 케이스는 제외), 해당 숫자와 그 뒤 문자를 분리
@@ -68,23 +43,16 @@ def number_split(sentence):
 def noise_remove(text):
     text = text.lower()
     
-    # url 대체
-    # url_pattern = re.compile(r'https?://\S*|www\.\S*')
-    # text = url_pattern.sub(r'URL', text)
+    # url 대체_
+    url_pattern = re.compile(r'https?://\S*|www\.\S*')
+    text = url_pattern.sub(r'URL', text)
 
     # html 삭제
     soup = BeautifulSoup(text, "html.parser")
     text = soup.get_text(separator=" ")
 
-    # 숫자 중간에 공백 삽입하기
-    # text = number_split(text)
-    #number_pattern = re.compile('\w*\d\w*') 
-#     number_pattern = re.compile('\d+') 
-#     text = number_pattern.sub(r'[[NUMBER]]', text)
-    
-
-    # PUCTUACTION_TO_REMOVED = string.punctuation.translate(str.maketrans('', '', '\"\'#$%&\\@'))  # !"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ 중 적은것을 제외한 나머지를 삭제
-    # text = text.translate(str.maketrans(PUCTUACTION_TO_REMOVED, ' '*len(PUCTUACTION_TO_REMOVED))) 
+    PUCTUACTION_TO_REMOVED = string.punctuation.translate(str.maketrans('', '', '\"\'#$%&\\@'))  # !"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ 중 적은것을 제외한 나머지를 삭제
+    text = text.translate(str.maketrans(PUCTUACTION_TO_REMOVED, ' '*len(PUCTUACTION_TO_REMOVED))) 
 
     # remove_redundant_white_spaces
     text = re.sub(' +', ' ', text)
@@ -98,20 +66,18 @@ def noise_remove(text):
 
 def preprocessing(text, tokenizer=None):
     text = noise_remove(text)
+    # tokenizer Mecab으로 변경 
+    tokenizer = Mecab()
     if tokenizer is not None:
-        text = tokenizer(text)
-        text = ' '.join(text)
+        text_tokens = tokenizer.morphs(text)
+        text = ' '.join(text_tokens)
 
     return text
 
+# abs용
 def korean_sent_spliter(doc):
     sents_splited = kss.split_sentences(doc)
     if len(sents_splited) == 1:
-        # .이나 ?가 있는데도 kss가 분리하지 않은 문장들을 혹시나해서 살펴보니
-        # 대부분 쉼표나 가운데점 대신 .을 사용하거나 "" 사이 인용문구 안에 들어가있는 점들. -> 괜찮.
-        # aa = sents_splited[0].split('. ')
-        # if len(aa) > 1:
-        #     print(sents_splited)
         return sents_splited
     else:  # kss로 분리가 된 경우(3문장 이상일 때도 고려)
         #print(sents_splited)
@@ -176,7 +142,7 @@ def create_json_files(df, data_type='train', target_summary_sent=None, path=''):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-task", default=None, type=str, choices=['df', 'train_bert', 'test_bert'])
-    parser.add_argument("-target_summary_sent", default='abs', type=str)
+    parser.add_argument("-target_summary_sent", default='ext', type=str)
     parser.add_argument("-n_cpus", default='2', type=str)
 
     args = parser.parse_args()
@@ -213,6 +179,7 @@ if __name__ == '__main__':
         valid_df.reset_index(inplace=True, drop=True)
 
         test_df = pd.DataFrame(tests)
+        test_df['extractive_sents'] = test_df.apply(lambda row: list(np.array(row['article_original'])[row['extractive']]) , axis=1)
 
         # save df
         train_df.to_pickle(f"{RAW_DATA_DIR}/train_df.pickle")
@@ -222,7 +189,7 @@ if __name__ == '__main__':
         print(f'valid_df({len(valid_df)}) is exported')
         print(f'test_df({len(test_df)}) is exported')
         
-    # python make_data.py -make bert -by abs
+    # python make_data.py -make bert -by ext
     # Make bert input file for train and valid from df file
     elif args.task  == 'train_bert':
         os.makedirs(JSON_DATA_DIR, exist_ok=True)
