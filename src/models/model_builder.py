@@ -136,7 +136,7 @@ class Bert(nn.Module):
 class BigBird(nn.Module):
     def __init__(self, large, temp_dir, finetune=False):
         super(BigBird, self).__init__()
-        self.model = AutoModel.from_pretrained("monologg/kobigbird-bert-base", cache_dir=temp_dir)
+        self.model = AutoModel.from_pretrained("/data/aip/logs/t3qai/000820703792611374/kobertsum/hugging_tokenizer")
         self.finetune = finetune
 
     def forward(self, x, mask):
