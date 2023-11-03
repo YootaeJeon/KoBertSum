@@ -303,7 +303,7 @@ class BertData():
 
     def __init__(self, args):
         self.args = args
-        self.tokenizer = AutoTokenizer.from_pretrained("monologg/kobigbird-bert-base")
+        self.tokenizer = AutoTokenizer.from_pretrained("/data/aip/logs/t3qai/000820703792611374/kobertsum/hugging_tokenizer")
 
         self.sep_token = '[SEP]'
         self.cls_token = '[CLS]'
